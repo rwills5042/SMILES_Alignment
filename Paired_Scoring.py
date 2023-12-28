@@ -36,8 +36,7 @@ with open(r'smiles.txt', 'r') as fp:
 # In[3]:
 
 
-#short smiles list for ease of use
-smiles = smiles[0:500]
+
 
 
 # In[4]:
