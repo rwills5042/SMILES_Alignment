@@ -45,22 +45,14 @@ with open('score_all_v_all.pkl', 'rb') as f:
     score_dict = pickle.load(f)
 
 
-# In[57]:
-
-
-score_dict
 
 
 # In[58]:
 
-
+#adding threshold to dictionary
 score_dict = {key: value + 1.524353523624236 for key, value in score_dict.items()}
 
 
-# In[59]:
-
-
-score_dict
 
 
 # In[60]:
@@ -151,7 +143,7 @@ def score(alpha, beta , gast1, gast2):
 
 # In[63]:
 
-
+#Reintroduces non-atomic characters to aligned fingerprints
 from collections import deque
 
 def reconstruct_smiles(modified_smiles, original_smiles):
@@ -242,8 +234,9 @@ def align(seq1, seq2):
     smiles_out1 = reconstruct_smiles(seq1_align[::-1], seq1_orig)
     smiles_out2 = reconstruct_smiles(seq2_align[::-1], seq2_orig)
     
-    
+    #Returns seq1 fingerprint alignemnt, seq2 fingerprint alignemnt, alignment score, seq1 reconstructed alignment, seq2 reconstructed alignemnt
     return(seq1_align[::-1] , seq2_align[::-1], M[len1,len2],smiles_out1,smiles_out2)
+    
 
 
 # In[65]:
@@ -275,7 +268,7 @@ def levenshtein_similarity(s1, s2):
 
 # In[66]:
 
-
+#exact string similiarity 
 def string_similarity(truth, experimental):
     """
     Calculate the percentage similarity between two strings based on exact match. Extra characters in the 
@@ -297,6 +290,8 @@ def string_similarity(truth, experimental):
 
 # In[14]:
 
+#Validation of Parameters
+
 
 #canonized SMILES
 canonized = ('[O-]C(=O)C(=O)CC([O-])=O',
@@ -310,7 +305,7 @@ canonized = ('[O-]C(=O)C(=O)CC([O-])=O',
 
 # In[15]:
 
-
+#Hand aligned truth set
 truth_set = ((('OCOCOCCOO', 'OCOCOCCOO'),
   ('OCOCO----CCOO', 'OCOCOCCOOCCOO'),
   ('OCO-CO---C-COO', 'OCOCC-COOCOCOO'),
@@ -442,27 +437,6 @@ import matplotlib.pyplot as plt
 # In[19]:
 
 
-# Pivoting the DataFrame to fit the heatmap requirements
-heatmap_data = df.pivot("Gap Open Penalty", "Gap Extend Penalty", "Exact Average")
-
-# Plotting the heatmap
-plt.figure(figsize=(8, 6))
-sns.heatmap(heatmap_data, annot=False, fmt="g", cmap='viridis')
-plt.title('Heatmap of Exact Average by Gap Open and Extend Penalties')
-plt.show()
-
-
-# In[20]:
-
-
-# Pivoting the DataFrame to fit the heatmap requirements
-heatmap_data = df.pivot("Gap Open Penalty", "Gap Extend Penalty", "Levenshtein Average")
-
-# Plotting the heatmap
-plt.figure(figsize=(8, 6))
-sns.heatmap(heatmap_data, annot=False, fmt="g", cmap='viridis')
-plt.title('Heatmap of Exact Average by Gap Open and Extend Penalties')
-plt.show()
 
 
 # In[26]:
@@ -484,7 +458,7 @@ for column in columns:
 # In[27]:
 
 
-# List of columns except 'Levenshtein Average'
+# List of columns except 'Except Average'
 columns = [col for col in df.columns if col != 'Exact Average']
 
 # Iterate over the columns and create a scatter plot with a trendline for each
@@ -497,7 +471,7 @@ for column in columns:
     plt.show()
 
 
-# Validation Part Redon to be averages of each index
+# Application of Pentose Phosphate Pathway
 
 # In[28]:
 
@@ -750,71 +724,6 @@ plt.show()
 # In[86]:
 
 
-urea = ( 'NC(=O)OP(O)(O)=O',
- 'NCCCC(N)C(O)=O',
- 'NC(=O)NCCCC(N)C(O)=O',
- 'NC(CC(O)=O)C(O)=O',
- 'NC(NC(CC(O)=O)C(O)=O)=NCCCC(N)C(O)=O',
- 'NC(N)=NCCCC(N)C(O)=O',
- '[O-]C(=O)C=CC([O-])=O',
- 'NC(N)=O')
-
-
-# In[87]:
-
-
-data = []
-
-for x in range(0,10):
-    gap_open_penalty = gap_open[x]
-    gap_extend_penalty = gap_extend[x]
-    
-    result = []
-    
-    n = len(urea)
-
-    for i in range(n):
-        # Creating a new list starting from the current item and cycling through the list
-        cycled_list = urea[i:] + urea[:i]
-
-        score_lst = []
-        for j in range(0, len(cycled_list)):
-            a = align(cycled_list[0], cycled_list[j])
-            score_lst.append(a[2])
-
-        result.append(score_lst)
-        
-    min_length = min(len(lst) for lst in result)
-
-    # Initialize a list to hold the sums
-    sums = [0] * min_length
-
-    # Sum up values at each index
-    for lst in result:
-        for i in range(min_length):
-            sums[i] += lst[i]
-
-    # Calculate the average for each index
-    averages = [sum_val / len(result) for sum_val in sums]
-    
-    data.append(averages)
-
-
-# In[88]:
-
-
-for i, sublist in enumerate(data):
-    plt.plot(sublist, label=f'List {i+1}')
-
-# Adding titles and labels
-plt.title('Top 10 Paramters: Alignment of the Urea Cycle using All vs All')
-plt.xlabel('Distance from Original Position')
-plt.ylabel('Average Alignment Score')
-plt.savefig('valid_all_v_all_urea.png',bbox_inches='tight')
-plt.show()
-
-
-# In[ ]:
 
 
 
