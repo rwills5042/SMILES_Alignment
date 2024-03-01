@@ -151,16 +151,4 @@ with open('score_pair_doubles.pkl', 'wb') as f:
     pickle.dump(result, f)
 
 
-# In[43]:
-
-
-#Refined dictionary for validation
-refined_dict = {('C','C'): result['C','C'],('C','O'): result['C','O'],('O','O'): result['O','O']}
-
-
-# In[40]:
-
-
-with open('score_pair_doubles_refined.pkl', 'wb') as f:
-    pickle.dump(refined_dict, f)
 
