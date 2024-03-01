@@ -93,7 +93,7 @@ canonized = ('[O-]C(=O)C(=O)CC([O-])=O',
 
 # In[8]:
 
-
+#Pathway for Pentose Phosphate Pathway
 pathway('M00004')
 
 
