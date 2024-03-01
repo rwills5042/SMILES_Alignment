@@ -407,69 +407,11 @@ df_sorted = df.sort_values(by='Levenshtein Average', ascending=False)
 df_sorted.head(10)
 
 
-# In[52]:
 
-
-df_sorted = df.sort_values(by='Exact Average', ascending=False)
-df_sorted.head(10)
-
-
-# In[20]:
-
-
-# Pivoting the DataFrame to fit the heatmap requirements
-heatmap_data = df.pivot("Gap Open Penalty", "Gap Extend Penalty", "Exact Average")
-
-# Plotting the heatmap
-plt.figure(figsize=(8, 6))
-sns.heatmap(heatmap_data, annot=False, fmt="g", cmap='viridis')
-plt.title('Heatmap of Exact Average by Gap Open and Extend Penalties')
-plt.show()
-
-
-# In[19]:
-
-
-# Pivoting the DataFrame to fit the heatmap requirements
-heatmap_data = df.pivot("Gap Open Penalty", "Gap Extend Penalty", "Levenshtein Average")
-
-# Plotting the heatmap
-plt.figure(figsize=(8, 6))
-sns.heatmap(heatmap_data, annot=False, fmt="g", cmap='viridis')
-plt.title('Heatmap of Exact Average by Gap Open and Extend Penalties')
-plt.show()
 
 
 # In[21]:
 
-
-# List of columns except 'Levenshtein Average'
-columns = [col for col in df.columns if col != 'Levenshtein Average']
-
-# Iterate over the columns and create a scatter plot with a trendline for each
-for column in columns:
-    plt.figure(figsize=(12, 6))
-    sns.regplot(x=df[column], y=df['Levenshtein Average'], line_kws={"color": "red"})
-    plt.title(f'Levenshtein Average vs {column} in Paired Scoring with Trendline')
-    plt.xlabel(column)
-    plt.ylabel('Levenshtein Average')
-    plt.show()
-
-
-# In[22]:
-
-
-# List of columns except 'Levenshtein Average'
-columns = [col for col in df.columns if col != 'Exact Average']
-
-# Iterate over the columns and create a scatter plot with a trendline for each
-for column in columns:
-    plt.figure(figsize=(12, 6))
-    sns.regplot(x=df[column], y=df['Exact Average'], line_kws={"color": "red"})
-    plt.title(f'Exact Average vs {column} in Paired Scoring with Trendline')
-    plt.xlabel(column)
-    plt.ylabel('Exact Average')
-    plt.show()
 
 
 # In[23]:
@@ -488,267 +430,77 @@ ppp = ['OC1OC(COP(O)(O)=O)C(O)C(O)C1O',
 
 
 # In[24]:
-
-
-gap_open = df_sorted['Gap Open Penalty'].head(10).tolist()
-gap_extend = df_sorted['Gap Extend Penalty'].head(10).tolist()
-
-
-# In[25]:
-
-
-gap_open[0],gap_extend[0]
-
-
-# In[35]:
-
-
 data = []
 
-for x in range(0,10):
-    gap_open_penalty = gap_open[x]
-    gap_extend_penalty = gap_extend[x]
+gap_open_penalty = -2
+gap_extend_penalty = -2
     
-    result = []
-    
-    n = len(ppp)
+result = []
 
-    for i in range(n):
-        # Creating a new list starting from the current item and cycling through the list
-        cycled_list = ppp[i:] + ppp[:i]
+n = len(ppp)
 
-        score_lst = []
-        for j in range(0, len(cycled_list)):
-            a = align(cycled_list[0], cycled_list[j])
-            score_lst.append(a[2])
+for i in range(n):
+    # Creating a new list starting from the current item and cycling through the list
+    cycled_list = ppp[i:] + ppp[:i]
 
-        result.append(score_lst)
-        
-    min_length = min(len(lst) for lst in result)
+    # Calculate the maximum index for alignment (half the cycle length, rounded up)
+    max_index = (len(cycled_list) + 1) // 2
 
-    # Initialize a list to hold the sums
-    sums = [0] * min_length
+    score_lst = []
+    for j in range(max_index):
+        # Calculate wrap-around index if needed
+        wrap_around_index = len(cycled_list) - j if j != 0 else 0
 
-    # Sum up values at each index
-    for lst in result:
-        for i in range(min_length):
-            sums[i] += lst[i]
+        # Use direct or wrap-around index based on which is smaller
+        align_index = j if j < wrap_around_index else wrap_around_index
 
-    # Calculate the average for each index
-    averages = [sum_val / len(result) for sum_val in sums]
-    
-    data.append(averages)
+        # Call align function with the chosen index
+        a = align(cycled_list[0], cycled_list[align_index])
+        score_lst.append(a[2])
 
+    result.append(score_lst)
 
-# In[36]:
+min_length = min(len(lst) for lst in result)
 
+# Initialize a list to hold the sums
+sums = [0] * min_length
 
-for i, sublist in enumerate(data):
-    plt.plot(sublist, label=f'List {i+1}')
+# Sum up values at each index
+for lst in result:
+    for i in range(min_length):
+        sums[i] += lst[i]
 
-# Adding titles and labels
-plt.title('Top Paramters: Alignment of the Pentose Phosphate Pathway using Paired Score')
-plt.xlabel('Distance from Original Position')
-plt.ylabel('Average Alignment Score')
-plt.savefig('validation_paired.png',bbox_inches='tight')
-plt.show()
+# Calculate the average for each index
+averages = [sum_val / len(result) for sum_val in sums]
+
+data.append(averages)
 
 
-# In[26]:
-
-
+import numpy as np
 import matplotlib.pyplot as plt
-indexes = range(len(data[0]))
 
-# Creating the plot
-plt.figure(figsize=(8, 6))
-plt.plot(indexes, data[0], marker='o')
+# Assuming 'result' is defined somewhere in your code
+data = np.array(result)
 
-# Adding title and labels
-plt.title('Plot of Values by Index')
-plt.xlabel('Index')
-plt.ylabel('Value')
+# Calculate mean and standard deviation for each position
+means = np.mean(data, axis=0)
+std_devs = np.std(data, axis=0)
 
-# Show the plot
+# Plotting Pentose Phosphate Pathway
+plt.errorbar(range(len(means)), means, yerr=std_devs, fmt='o', capsize=5)
+plt.plot(range(len(means)), means, label='Mean trend', linestyle='-', marker='o')
+plt.title("Best Parameter alignment of Pentose Phosphate Pathway of Paired scoring")
+plt.xlabel("Distance from Starting Position")
+plt.ylabel("Average Score")
+plt.grid(True)
+
+# Set x-ticks to whole numbers
+plt.xticks(range(len(means)))
+
+# Uncomment the next line if you want to show the plot in a script
+# plt.show()
+
+plt.savefig('valid_paired_ppp_bars.png', bbox_inches='tight')
 plt.show()
-
-
-# In[31]:
-
-
-data = []
-
-for x in range(0,10):
-    gap_open_penalty = gap_open[x]
-    gap_extend_penalty = gap_extend[x]
-    
-    result = []
-    
-    n = len(canonized)
-
-    for i in range(n):
-        # Creating a new list starting from the current item and cycling through the list
-        cycled_list = canonized[i:] + canonized[:i]
-
-        score_lst = []
-        for j in range(0, len(cycled_list)):
-            a = align(cycled_list[0], cycled_list[j])
-            score_lst.append(a[2])
-
-        result.append(score_lst)
-        
-    min_length = min(len(lst) for lst in result)
-
-    # Initialize a list to hold the sums
-    sums = [0] * min_length
-
-    # Sum up values at each index
-    for lst in result:
-        for i in range(min_length):
-            sums[i] += lst[i]
-
-    # Calculate the average for each index
-    averages = [sum_val / len(result) for sum_val in sums]
-    
-    data.append(averages)
-
-
-# In[34]:
-
-
-for i, sublist in enumerate(data):
-    plt.plot(sublist, label=f'List {i+1}')
-
-# Adding titles and labels
-plt.title('Top 10 Paramters: Alignment of the Krebs Cycle using Paried Scoring')
-plt.xlabel('Distance from Original Position')
-plt.ylabel('Average Alignment Score')
-plt.savefig('validation_paired_tca.png',bbox_inches='tight')
-plt.show()
-
-
-# In[ ]:
-
-
-
-
-
-# In[53]:
-
-
-gly = ('OCC1OC(O)C(O)C(O)C1O',
- 'OC1OC(COP(O)(O)=O)C(O)C(O)C1O',
- 'OCC(=O)C(O)C(O)C(O)COP(O)(O)=O',
- 'OCC(=O)COP(O)(O)=O',
- 'OC(COP(O)(O)=O)C=O',
- 'OP(O)(=O)OCC(O)C(=O)OP(O)(O)=O',
- 'OC(COP(O)(O)=O)C(O)=O',
- 'OCC(OP(O)(O)=O)C(O)=O',
- 'C=C(OP(O)(O)=O)C(O)=O',
- 'CC(=O)C([O-])=O')
-
-
-# In[54]:
-
-
-data = []
-
-for x in range(0,10):
-    gap_open_penalty = gap_open[x]
-    gap_extend_penalty = gap_extend[x]
-    
-    result = []
-    
-    for i in range(0, len(gly)):
-        a = align(gly[0],gly[i])
-        result.append(a[2])
-        
-    data.append(result)
-
-
-# In[56]:
-
-
-for i, sublist in enumerate(data):
-    plt.plot(sublist, label=f'List {i+1}')
-
-# Adding titles and labels
-plt.title('Top 10 Paramters: Alignment of the Glycolsis (Linear Pathway) using Paired')
-plt.xlabel('Distance from Original Position')
-plt.ylabel(' Alignment Score')
-plt.savefig('valid_pair_glyc.png',bbox_inches='tight')
-plt.show()
-
-
-# In[57]:
-
-
-urea = ( 'NC(=O)OP(O)(O)=O',
- 'NCCCC(N)C(O)=O',
- 'NC(=O)NCCCC(N)C(O)=O',
- 'NC(CC(O)=O)C(O)=O',
- 'NC(NC(CC(O)=O)C(O)=O)=NCCCC(N)C(O)=O',
- 'NC(N)=NCCCC(N)C(O)=O',
- '[O-]C(=O)C=CC([O-])=O',
- 'NC(N)=O')
-
-
-# In[58]:
-
-
-data = []
-
-for x in range(0,10):
-    gap_open_penalty = gap_open[x]
-    gap_extend_penalty = gap_extend[x]
-    
-    result = []
-    
-    n = len(urea)
-
-    for i in range(n):
-        # Creating a new list starting from the current item and cycling through the list
-        cycled_list = urea[i:] + urea[:i]
-
-        score_lst = []
-        for j in range(0, len(cycled_list)):
-            a = align(cycled_list[0], cycled_list[j])
-            score_lst.append(a[2])
-
-        result.append(score_lst)
-        
-    min_length = min(len(lst) for lst in result)
-
-    # Initialize a list to hold the sums
-    sums = [0] * min_length
-
-    # Sum up values at each index
-    for lst in result:
-        for i in range(min_length):
-            sums[i] += lst[i]
-
-    # Calculate the average for each index
-    averages = [sum_val / len(result) for sum_val in sums]
-    
-    data.append(averages)
-
-
-# In[59]:
-
-
-for i, sublist in enumerate(data):
-    plt.plot(sublist, label=f'List {i+1}')
-
-# Adding titles and labels
-plt.title('Top 10 Paramters: Alignment of the Urea Cycle using Paired')
-plt.xlabel('Distance from Original Position')
-plt.ylabel('Average Alignment Score')
-plt.savefig('valid_paired_urea.png',bbox_inches='tight')
-plt.show()
-
-
-# In[ ]:
-
-
 
 
